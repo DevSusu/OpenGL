@@ -31,7 +31,7 @@ void displayCB(void)		/* function called whenever redisplay needed */
     
     float angle = radian(36);
     for( int i=0;i<11;i++ ) {
-        glVertex2d( radius*cosf(i*angle) , radius*sinf(i*angle) );
+        glVertex3f( center_x + radius*cosf(i*angle) , center_y + radius*sinf(i*angle) , center_z );
     }
 
     glEnd();
