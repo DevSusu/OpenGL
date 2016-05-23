@@ -23,20 +23,15 @@ class vertex {
     
 public:
     //implement constructor, copy construct, destructor and member function if you need.
-
     vertex(const vertex& vtx) {
-        this->pos = new float[3];
+        pos = new float[3];
         for(int i=0;i<3;i++) {
-            this->pos[i] = vtx.pos[i];
+            pos[i] = vtx.pos[i];
         }
     }
     vertex( float f1, float f2, float f3 ) {
-        this->pos = new float[3];
-        this->pos[0] = f1; this->pos[1] = f2; this->pos[2] = f3;
-    }
-    
-    float* position() {
-        return this->pos;
+        pos = new float[3];
+        pos[0] = f1; pos[1] = f2; pos[2] = f3;
     }
     
     ~vertex() {
@@ -57,6 +52,12 @@ public:
         vtx[2] = new vertex(v3);
     }
     
+    face( const face& f ) {
+        for(int i=0;i<3;i++) {
+            vtx[i] = new vertex(*f.vtx[i]);
+        }
+    }
+    
     void draw(){
         //calculate face normal. cross product
         //you can modify this function if you need.
@@ -75,9 +76,15 @@ public:
         glBegin(GL_TRIANGLES);
         for(int j=0; j<3; j++){
             glNormal3f(normal[0]/length, normal[1]/length, normal[2]/length);
-            glVertex3f(vtx[j]->position()[0], vtx[j]->position()[1], vtx[j]->position()[2]);
+            glVertex3f(vtx[j]->pos[0], vtx[j]->pos[1], vtx[j]->pos[2]);
         }
         glEnd();
+    }
+    
+    ~face() {
+        delete vtx[0];
+        delete vtx[1];
+        delete vtx[2];
     }
     
 private:
