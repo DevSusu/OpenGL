@@ -19,6 +19,7 @@
 using namespace std;
 
 vector<Circle*> cir;
+Stick* stick;
 
 /********************* by Jeongwon ************************/
 vector<Rectangle*> rect;
@@ -27,27 +28,28 @@ Boundary* boundary = new Boundary();
 
 void initShape() {
     int num = 1;
+    
     for (int i = 0; i<num; i++) {
         Circle* shape = new Circle();
-//        shape->setPosition((rand() % num / double(num) - 0.4) * 2, (rand() % num / double(num) - 0.4) * 2);
         shape->setPosition(0, 0);
         cir.push_back(shape);
     }
     
     /********************* by Jeongwon ************************/
-    Rectangle* rect_1 = new Rectangle();
-    rect_1->setPosition(-0.2, -0.95);
-    rect_1->setlength(0.4,0.02);
-    rect.push_back(rect_1);
+    stick = new Stick();
+    stick->setPosition(-0.2, -0.95);
+    stick->setlength(STICK_WIDTH,STICK_HEIGHT);
+    rect.push_back(stick);
+    
+    Rectangle* rect_1;
     int brick_num = 24;
     for (int i = 0; i < brick_num; i++) {
         rect_1 = new Rectangle();
         rect_1->setPosition(-1+0.005 + (i-(i/10)*10)*0.2, 0.95-0.05*(i/10));//
-        rect_1->setlength(STICK_WIDTH, STICK_HEIGHT);
+        rect_1->setlength(BRICK_WIDTH, BRICK_HEIGHT);
         rect.push_back(rect_1);
     }
     /********************* by Jeongwon ************************/
-    
     
 }
 
@@ -59,10 +61,21 @@ void renderScene()
     
     for (int i = 0; i < cir.size(); i++)
         cir[i]->draw();
-    for (int i = 0; i < rect.size(); i++)//
-        rect[i]->draw();//
+    for (int i = 0; i < rect.size(); i++)
+        rect[i]->draw();
     boundary->draw();
     glutSwapBuffers();
+}
+
+void cleanUp()
+{
+    for (int i = 0; i < cir.size(); i++) {
+        delete cir[i];
+    }
+    for (int i = 0; i < rect.size(); i++) {
+        delete rect[i];
+    }
+    delete boundary;
 }
 
 clock_t preTime;
@@ -83,7 +96,7 @@ void idle() {
         for (int i = 0; i < cir.size(); i++) {
             
             // stick
-            rect[0]->collide(cir[i]);
+            stick->collide(cir[i]);
             
             // bricks
             for (int j = 1; j<rect.size(); j++) {
@@ -114,10 +127,11 @@ void SpecialKey(int key, int x, int y)
     switch (key)
     {
         case GLUT_KEY_RIGHT:
-            rect[0]->cornerPoint += move;
+            rect[0]->move(move);
             break;
         case GLUT_KEY_LEFT:
-            rect[0]->cornerPoint -= move;
+            move = move * -1;
+            rect[0]->move(move);
             break;
         default:
             break;

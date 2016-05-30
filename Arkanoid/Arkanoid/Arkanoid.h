@@ -1,8 +1,12 @@
 #ifndef _ARKANOID_H_
 #define _ARKANOID_H_
 
-#define STICK_WIDTH 0.19f
-#define STICK_HEIGHT 0.045f
+#define BRICK_WIDTH 0.19f
+#define BRICK_HEIGHT 0.045f
+#define STICK_WIDTH 0.4f
+#define STICK_HEIGHT 0.02f
+
+#define VEL -5.0f
 
 #define TIME_CONSTANT 100
 #define FPS 45
@@ -98,8 +102,7 @@ void Circle::collide(Circle* c) {
 
 Circle::Circle() {
     radius = 0.05;
-    velocity[0] = float(rand() % 10 - 5) / (FPS * 3);
-    velocity[1] = float(rand() % 10 - 5) / (FPS * 3);
+    velocity[1] = VEL / (FPS * 5);
     rgb.val[0] = rand() % 10 / double(10);
     rgb.val[1] = rand() % 10 / double(10);
     rgb.val[2] = rand() % 10 / double(10);
@@ -191,13 +194,13 @@ void Boundary::draw() {
 class Rectangle : public Shape, public Color {
 public:
     Rectangle();
-    Rectangle(Rectangle& rect) :Shape(rect), Color(rect) {
+    Rectangle(Rectangle& rect) : Shape(rect), Color(rect) {
         this->cornerPoint = rect.cornerPoint;
         this->length = rect.length;
     }
     ~Rectangle() {}
     void draw();
-    void move();
+    void move(Vec<float, 2>& m);
     void setPosition(float x, float y) {
         cornerPoint[0] = x;
         cornerPoint[1] = y;
@@ -206,12 +209,28 @@ public:
         length[0] = x;
         length[1] = y;
     }
+    void accelerate(bool right) {
+        if ( right ) {
+            velocity[0] = 0.05;
+        }
+        else {
+            velocity[0] = -0.05;
+        }
+    }
+    void stop() {
+        velocity[0] = 0;
+    }
+    int isColliding(Circle* c);
     bool collide(Circle* c); // Subin
     Vec<float, 2> cornerPoint;
     Vec<float, 2> length;
+    Vec<float, 2> velocity;
 };
 
 Rectangle::Rectangle() {
+    
+    velocity[0] = 0;
+    velocity[1] = 0;
     
     rgb.val[0] = rand() % 10 / double(10);
     rgb.val[1] = rand() % 10 / double(10);
@@ -231,35 +250,40 @@ void Rectangle::draw() {
 }
 
 /********************* by Jeongwon ************************/
-void Rectangle::move() {
-    Vec<float, 2> m;
+void Rectangle::move(Vec<float, 2>& m) {
+    
     cornerPoint += m;
+    
+    /********************* by Subin ************************/
+    if ( cornerPoint[0] + length[0] > 1 )
+        cornerPoint[0] = 1 - length[0];
+    else if ( cornerPoint[0] < -1 )
+        cornerPoint[0] = -1;
+    /********************* by Subin ************************/
 }
 /********************* by Jeongwon ************************/
 
 /********************* by Subin ************************/
-bool Rectangle::collide(Circle* c) {
+int Rectangle::isColliding(Circle* c) {
     
     bool collide_top = c->centerPos[1] - c->radius < this->cornerPoint[1] + this->length[1];
     bool collide_bottom = c->centerPos[1] + c->radius > this->cornerPoint[1];
     bool collide_left = c->centerPos[0] + c->radius > this->cornerPoint[0];
     bool collide_right = c->centerPos[0] - c->radius < this->cornerPoint[0] + this->length[0];
     
-    if( !(collide_top && collide_left && collide_right && collide_bottom) ) return false;
-        
+    if( !(collide_top && collide_left && collide_right && collide_bottom) ) return 0;
+    
     if( c->velocity[1] < 0  ) {
         
         if( c->centerPos[0] > this->cornerPoint[0] &&
-            c->centerPos[0] < this->cornerPoint[0] + this->length[0] ) {
-            
-            c->velocity[1] *= -1;
-            c->centerPos[1] = this->cornerPoint[1] + this->length[1] + c->radius;
+           c->centerPos[0] < this->cornerPoint[0] + this->length[0] ) {
+            return 1; // top
         }
         else {
-            if( c->centerPos[0] < this->cornerPoint[0] ){
-                c->centerPos[0] = this->cornerPoint[0] - c->radius;
+            if( c->centerPos[0] <= this->cornerPoint[0] ){
+                return 4; // left
             } else {
-                c->centerPos[0] = this->cornerPoint[0] + this->length[0] + c->radius;
+                return 2; // right
             }
             c->velocity[0] *= -1;
         }
@@ -269,23 +293,66 @@ bool Rectangle::collide(Circle* c) {
     {
         if( c->centerPos[0] > this->cornerPoint[0] &&
            c->centerPos[0] < this->cornerPoint[0] + this->length[0] ) {
-            
-            c->velocity[1] *= -1;
-            c->centerPos[1] = this->cornerPoint[1] - c->radius;
+            return 3; // bottom
         }
         else {
-            if( c->centerPos[0] < this->cornerPoint[0] ){
-                c->centerPos[0] = this->cornerPoint[0] - c->radius;
+            if( c->centerPos[0] <= this->cornerPoint[0] ){
+                return 4; // left
             } else {
-                c->centerPos[0] = this->cornerPoint[0] + this->length[0] + c->radius;
+                return 2; // right
             }
             c->velocity[0] *= -1;
         }
     }
-    return true;
+    return 1;
     
+}
+bool Rectangle::collide(Circle* c) {
+    
+    switch( isColliding(c) ) {
+        case 0: return false;
+        case 1:
+            c->velocity[1] *= -1;
+            c->centerPos[1] = this->cornerPoint[1] + this->length[1] + c->radius;
+            break;
+        case 2:
+            c->velocity[0] *= -1;
+            c->centerPos[0] = this->cornerPoint[0] + this->length[0] + c->radius;
+            break;
+        case 3:
+            c->velocity[1] *= -1;
+            c->centerPos[1] = this->cornerPoint[1] - c->radius;
+            break;
+        case 4:
+            c->velocity[0] *= -1;
+            c->centerPos[0] = this->cornerPoint[0] - c->radius;
+            break;
+    }
+    return true;
 }
 /********************* by Subin ************************/
 
+class Stick : public Rectangle {
+public:
+    Stick() : Rectangle() {}
+    bool collide(Circle* c);
+};
+
+bool Stick::collide(Circle* c) {
+    
+    int di = Rectangle::isColliding(c);
+    Rectangle::collide(c);
+    
+    if ( di == 1 ) {
+
+        float collision_pos = (c->centerPos[0] - (cornerPoint[0]+STICK_WIDTH/2.0)) / (STICK_WIDTH);
+        float rad = M_PI/2 * (1-collision_pos);
+        
+        c->velocity[0] = abs(VEL) * cos(rad) / (FPS * 5);
+        c->velocity[1] = abs(VEL) * sin(rad) / (FPS * 5);
+
+    }
+    return di;
+}
 
 #endif
