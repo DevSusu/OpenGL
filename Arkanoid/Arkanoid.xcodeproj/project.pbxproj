@@ -31,7 +31,6 @@
 		D211CA471CFC2848000667FC /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
 		D211CA491CFC2A95000667FC /* Vec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Vec.h; sourceTree = "<group>"; };
 		D211CA4A1CFC2B0F000667FC /* Arkanoid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Arkanoid.h; sourceTree = "<group>"; };
-		D211CA4B1CFC2BDC000667FC /* Collision.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Collision.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,7 +70,6 @@
 				D211CA3E1CFC2838000667FC /* main.cpp */,
 				D211CA491CFC2A95000667FC /* Vec.h */,
 				D211CA4A1CFC2B0F000667FC /* Arkanoid.h */,
-				D211CA4B1CFC2BDC000667FC /* Collision.h */,
 			);
 			path = Arkanoid;
 			sourceTree = "<group>";

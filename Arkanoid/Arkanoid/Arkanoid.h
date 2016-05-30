@@ -6,6 +6,9 @@
 #define STICK_WIDTH 0.4f
 #define STICK_HEIGHT 0.02f
 
+#define BORDER_RIGHT 0.75f
+#define BORDER_LEFT -1.0f
+
 #define VEL -5.0f
 
 #define TIME_CONSTANT 100
@@ -148,13 +151,13 @@ Boundary::Boundary(){
 
 /********************* by Subin ************************/
 bool Boundary::collide(Circle* c) {
-    if (c->centerPos[0] > 1 - c->radius) {
+    if (c->centerPos[0] > BORDER_RIGHT - c->radius) {
         c->velocity[0] *= -1;
-        c->centerPos[0] = 1 - c->radius;
+        c->centerPos[0] = BORDER_RIGHT - c->radius;
     }
-    else if (c->centerPos[0] < -1 + c->radius) {
+    else if (c->centerPos[0] < BORDER_LEFT + c->radius) {
         c->velocity[0] *= -1;
-        c->centerPos[0] = -1 + c->radius;
+        c->centerPos[0] = BORDER_LEFT + c->radius;
     }
     if (c->centerPos[1] > 1 - c->radius) {
         c->velocity[1] *= -1;
@@ -172,20 +175,20 @@ void Boundary::draw() {
     glColor3f(rgb[0], rgb[1], rgb[2]);
     glBegin(GL_QUADS);
     
-    glVertex3f(-1, 1, 0);
-    glVertex3f(-1 + 0.005, 1, 0);
-    glVertex3f(-1 + 0.005, -1, 0);
-    glVertex3f(-1, -1, 0);
+    glVertex3f(BORDER_LEFT, 1, 0);
+    glVertex3f(BORDER_LEFT + 0.005, 1, 0);
+    glVertex3f(BORDER_LEFT + 0.005, -1, 0);
+    glVertex3f(BORDER_LEFT, -1, 0);
     
-    glVertex3f(-1, 1, 0);
-    glVertex3f(1, 1, 0);
-    glVertex3f(1, 1 - 0.005, 0);
-    glVertex3f(-1, 1 - 0.005, 0);
+    glVertex3f(BORDER_LEFT, 1, 0);
+    glVertex3f(BORDER_RIGHT, 1, 0);
+    glVertex3f(BORDER_RIGHT, 1 - 0.005, 0);
+    glVertex3f(BORDER_LEFT, 1 - 0.005, 0);
     
-    glVertex3f(1, 1, 0);
-    glVertex3f(1 - 0.005, 1, 0);
-    glVertex3f(1 - 0.005, -1, 0);
-    glVertex3f(1, -1, 0);
+    glVertex3f(BORDER_RIGHT, 1, 0);
+    glVertex3f(BORDER_RIGHT - 0.005, 1, 0);
+    glVertex3f(BORDER_RIGHT - 0.005, -1, 0);
+    glVertex3f(BORDER_RIGHT, -1, 0);
     
     glEnd();
 }
@@ -255,10 +258,10 @@ void Rectangle::move(Vec<float, 2>& m) {
     cornerPoint += m;
     
     /********************* by Subin ************************/
-    if ( cornerPoint[0] + length[0] > 1 )
-        cornerPoint[0] = 1 - length[0];
-    else if ( cornerPoint[0] < -1 )
-        cornerPoint[0] = -1;
+    if ( cornerPoint[0] + length[0] > BORDER_RIGHT )
+        cornerPoint[0] = BORDER_RIGHT - length[0];
+    else if ( cornerPoint[0] < BORDER_LEFT )
+        cornerPoint[0] = BORDER_LEFT;
     /********************* by Subin ************************/
 }
 /********************* by Jeongwon ************************/
