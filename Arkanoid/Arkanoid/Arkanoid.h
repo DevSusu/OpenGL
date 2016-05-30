@@ -1,15 +1,17 @@
 #ifndef _ARKANOID_H_
 #define _ARKANOID_H_
 
-#define BRICK_WIDTH 0.19f
+#define BORDER_RIGHT 0.6f
+#define BORDER_LEFT -1.0f
+
+#define BRICK_NUM_LINE 10
+
+#define BRICK_WIDTH (BORDER_RIGHT-BORDER_LEFT-0.1)/BRICK_NUM_LINE
 #define BRICK_HEIGHT 0.045f
 #define STICK_WIDTH 0.4f
 #define STICK_HEIGHT 0.02f
 
-#define BORDER_RIGHT 0.75f
-#define BORDER_LEFT -1.0f
-
-#define VEL -5.0f
+#define VEL -7.0f
 
 #define TIME_CONSTANT 100
 #define FPS 45
@@ -104,7 +106,7 @@ void Circle::collide(Circle* c) {
 /********************* by Subin ************************/
 
 Circle::Circle() {
-    radius = 0.05;
+    radius = 0.02;
     velocity[1] = VEL / (FPS * 5);
     rgb.val[0] = rand() % 10 / double(10);
     rgb.val[1] = rand() % 10 / double(10);
@@ -203,6 +205,18 @@ public:
     }
     ~Rectangle() {}
     void draw();
+    void moveTo(Vec<float, 2>& pos) {
+        cornerPoint[0] = pos[0];
+        cornerPoint[1] = pos[1];
+        
+        checkBorder();
+    }
+    void checkBorder() {
+        if ( cornerPoint[0] + length[0] > BORDER_RIGHT )
+            cornerPoint[0] = BORDER_RIGHT - length[0];
+        else if ( cornerPoint[0] < BORDER_LEFT )
+            cornerPoint[0] = BORDER_LEFT;
+    }
     void move(Vec<float, 2>& m);
     void setPosition(float x, float y) {
         cornerPoint[0] = x;
@@ -228,6 +242,7 @@ public:
     Vec<float, 2> cornerPoint;
     Vec<float, 2> length;
     Vec<float, 2> velocity;
+    int durability = 3;
 };
 
 Rectangle::Rectangle() {
@@ -240,8 +255,16 @@ Rectangle::Rectangle() {
     rgb.val[2] = rand() % 10 / double(10);
 }
 
+float brick_colors[4][3] = {
+    {0,0,0},
+    { 0.2901960784,0.1882352941,0.4274509804 },
+    { 0.631372549,0.4039215686,0.6470588235 },
+    { 0.8274509804,0.737254902,0.8 }
+};
+
 void Rectangle::draw() {
-    glColor3f(rgb[0], rgb[1], rgb[2]);
+    
+    glColor3f(brick_colors[durability][0], brick_colors[durability][1], brick_colors[durability][2]);
     glBegin(GL_QUADS);
     
     glVertex3f(cornerPoint[0], cornerPoint[1], 0);
@@ -256,13 +279,7 @@ void Rectangle::draw() {
 void Rectangle::move(Vec<float, 2>& m) {
     
     cornerPoint += m;
-    
-    /********************* by Subin ************************/
-    if ( cornerPoint[0] + length[0] > BORDER_RIGHT )
-        cornerPoint[0] = BORDER_RIGHT - length[0];
-    else if ( cornerPoint[0] < BORDER_LEFT )
-        cornerPoint[0] = BORDER_LEFT;
-    /********************* by Subin ************************/
+    checkBorder();
 }
 /********************* by Jeongwon ************************/
 
@@ -339,7 +356,13 @@ class Stick : public Rectangle {
 public:
     Stick() : Rectangle() {}
     bool collide(Circle* c);
+    void draw();
 };
+
+void Stick::draw() {
+    glColor3f(0.05490196078, 0.1529411765, 0.2352941176);
+    Rectangle::draw();
+}
 
 bool Stick::collide(Circle* c) {
     

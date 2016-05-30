@@ -15,10 +15,14 @@
 #include "Vec.h"
 #include "Arkanoid.h"
 
+#define WINDOW_HALF_WIDTH 320
+
 using namespace std;
 
 vector<Circle*> cir;
-bool stop;
+bool stop = false;
+bool game_running = true;
+int life;
 Stick* stick;
 int score = 0;
 
@@ -54,6 +58,8 @@ void glutPrint(float x, float y, void* font, char* text, float r, float g, float
 }
 
 void initShape() {
+
+    life = 3;
     int num = 1;
     
     for (int i = 0; i<num; i++) {
@@ -74,7 +80,7 @@ void initShape() {
     int brick_num = 24;
     for (int i = 0; i < brick_num; i++) {
         rect_1 = new Rectangle();
-        rect_1->setPosition(-1+0.005 + (i-(i/10)*10)*0.2, 0.95-0.05*(i/10));
+        rect_1->setPosition(BORDER_LEFT+0.005 + (i-(i/10)*10)*(BRICK_WIDTH+0.01), 0.95-0.05*(i/10));
         rect_1->setlength(BRICK_WIDTH, BRICK_HEIGHT);
         rect.push_back(rect_1);
     }
@@ -111,21 +117,32 @@ void renderScene()
         return ;
     }
     
-    for (int i = 0; i < cir.size(); i++)
-        cir[i]->draw();
-    for (int i = 0; i < rect.size(); i++)
-        rect[i]->draw();
-    boundary->draw();
-    
-    glutPrint(0.75, 0.95, glutFonts[3], strdup(("Score: " + std::to_string(score)).c_str()), 0.0, 0,0,1);
-    glutSwapBuffers();
+    if( game_running ) {
+        
+        for (int i = 0; i < cir.size(); i++)
+            cir[i]->draw();
+        for (int i = 0; i < rect.size(); i++)
+            rect[i]->draw();
+        boundary->draw();
+        
+        glutPrint(0.65, 0.90, glutFonts[3], strdup(("Score: " + std::to_string(score)).c_str()), 0.0, 0,0,1);
+        glutSwapBuffers();
+        
+    } else {
+        
+        glutPrint(-0.1, 0.3, glutFonts[3], strdup(("Score: " + std::to_string(score)).c_str()), 0.0, 0,0,1);
+        glutPrint(-0.35, 0, glutFonts[3], strdup("Press Space Bar to restart"), 0.0, 0,0,1);
+        glutPrint(-0.25, -0.3, glutFonts[3], strdup("Press ESC to quit"), 0.0, 0,0,1);
+        glutSwapBuffers();
+
+    }
 }
 
 clock_t preTime;
 void idle() {
     clock_t current = clock();
     clock_t diff = current - preTime;
-    if (diff > 1000.0 / FPS) {
+    if (diff > 1000.0 / FPS && game_running) {
         for (int i = 0; i<cir.size(); i++) {
             cir[i]->move();
         }
@@ -143,9 +160,14 @@ void idle() {
             
             // bricks
             for (int j = 1; j<rect.size(); j++) {
-                if ( rect[j]->collide(cir[i]) ) {
-                    rect.erase(rect.begin() + j);
-                    score ++ ;
+                if (rect[j]->collide(cir[i])) {
+                    rect[j]->durability--;
+                    
+                    if( rect[j]->durability == 0)
+                        rect.erase(rect.begin() + j);
+                    
+                    score++;
+                    cout << score << endl;
                 }
             }
             
@@ -156,6 +178,13 @@ void idle() {
             
             if ( cir.size() == 0 || rect.size() == 1 ) {
                 stop = true;
+                life--;
+                
+                if( life == 0 )
+                    game_running = false;
+                else
+                    game_running = true;
+                
                 break;
             }
             preTime = current;
@@ -175,14 +204,34 @@ void SpecialKey(int key, int x, int y)
         case GLUT_KEY_RIGHT:
             rect[0]->move(move);
             break;
+            
         case GLUT_KEY_LEFT:
             move = move * -1;
             rect[0]->move(move);
             break;
+            
+        case 32: // SPACEBAR
+            game_running = !game_running;
+            break;
+            
+        case 27: // ESC
+            if( !game_running )
+                exit(0);
+            break;
+            
         default:
             break;
     }
     glutPostRedisplay();
+}
+
+void passive(int x, int y){
+    Vec<float,2> temp;
+    
+    temp[0] = (x- WINDOW_HALF_WIDTH - WINDOW_HALF_WIDTH*STICK_WIDTH/2)/WINDOW_HALF_WIDTH;
+    temp[1] = rect[0]->cornerPoint[1];
+    
+    rect[0]->moveTo( temp );
 }
 
 
@@ -195,12 +244,13 @@ int main(int argc, char **argv)
     
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowPosition(100, 100);
-    glutInitWindowSize(640, 680);
-    glutCreateWindow("Practice 11");
+    glutInitWindowSize(WINDOW_HALF_WIDTH * 2, 600);
+    glutCreateWindow("Arkanoid");
     
     glutDisplayFunc(renderScene);
     preTime = clock();
     glutIdleFunc(idle);
+    glutPassiveMotionFunc(&passive);
     glutSpecialFunc(SpecialKey);
     glutMainLoop();
     
