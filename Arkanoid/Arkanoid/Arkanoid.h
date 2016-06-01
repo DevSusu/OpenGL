@@ -11,10 +11,13 @@
 #define STICK_WIDTH 0.4f
 #define STICK_HEIGHT 0.02f
 
-#define VEL -7.0f
+float VEL = -7.0f;
+float STAGE_VEL[3] = {-7.0f,-9.0f,-10.0f};
 
 #define TIME_CONSTANT 100
 #define FPS 45
+
+#define PI 3.1415926536
 
 class Color {
 public:
@@ -75,7 +78,6 @@ public:
     float radius;
 };
 
-/********************* by Subin ************************/
 bool Circle::isColliding(Circle* c) {
     Vec<float, 2> differenceVector = this->centerPos - c->centerPos;
     float distance = sqrt(dotoperator(differenceVector, differenceVector));
@@ -103,7 +105,6 @@ void Circle::collide(Circle* c) {
     this->centerPos += normalize*overlap / 2.0;
     c->centerPos -= normalize*overlap / 2.0;
 }
-/********************* by Subin ************************/
 
 Circle::Circle() {
     radius = 0.02;
@@ -120,8 +121,8 @@ void Circle::draw() {
     glVertex3f(centerPos[0], centerPos[1], 0);
     for (int i = 0; i<step + 1; i++) {
         Vec<float, 2> displacement;
-        displacement.val[0] = radius*cos(2.0*M_PI / step*i);
-        displacement.val[1] = radius*sin(2.0*M_PI / step*i);
+        displacement.val[0] = radius*cos(2.0*PI / step*i);
+        displacement.val[1] = radius*sin(2.0*PI / step*i);
         
         Vec<float, 2> point = centerPos + displacement;
         glVertex3f(point[0], point[1], 0);
@@ -133,7 +134,6 @@ void Circle::move() {
     centerPos += velocity;
 }
 
-/********************* by Jeongwon ************************/
 class Boundary : public Shape, public Color {
 public:
     Boundary();
@@ -150,8 +150,6 @@ Boundary::Boundary(){
     rgb.val[2] = 0;
 }
 
-
-/********************* by Subin ************************/
 bool Boundary::collide(Circle* c) {
     if (c->centerPos[0] > BORDER_RIGHT - c->radius) {
         c->velocity[0] *= -1;
@@ -171,7 +169,6 @@ bool Boundary::collide(Circle* c) {
     }
     return false;
 }
-/********************* by Subin ************************/
 
 void Boundary::draw() {
     glColor3f(rgb[0], rgb[1], rgb[2]);
@@ -194,7 +191,6 @@ void Boundary::draw() {
     
     glEnd();
 }
-/********************* by Jeongwon ************************/
 
 class Rectangle : public Shape, public Color {
 public:
@@ -205,6 +201,9 @@ public:
     }
     ~Rectangle() {}
     void draw();
+    void setDurability(int durability) {
+        this->durability = durability;
+    }
     void moveTo(Vec<float, 2>& pos) {
         cornerPoint[0] = pos[0];
         cornerPoint[1] = pos[1];
@@ -242,7 +241,7 @@ public:
     Vec<float, 2> cornerPoint;
     Vec<float, 2> length;
     Vec<float, 2> velocity;
-    int durability = 3;
+    int durability = 1;
 };
 
 Rectangle::Rectangle() {
@@ -275,15 +274,12 @@ void Rectangle::draw() {
     glEnd();
 }
 
-/********************* by Jeongwon ************************/
 void Rectangle::move(Vec<float, 2>& m) {
     
     cornerPoint += m;
     checkBorder();
 }
-/********************* by Jeongwon ************************/
 
-/********************* by Subin ************************/
 int Rectangle::isColliding(Circle* c) {
     
     bool collide_top = c->centerPos[1] - c->radius < this->cornerPoint[1] + this->length[1];
@@ -295,8 +291,8 @@ int Rectangle::isColliding(Circle* c) {
     
     if( c->velocity[1] < 0  ) {
         
-        if( c->centerPos[0] > this->cornerPoint[0] &&
-           c->centerPos[0] < this->cornerPoint[0] + this->length[0] ) {
+        if( c->centerPos[0] + 0.04 > this->cornerPoint[0] &&
+           c->centerPos[0] < this->cornerPoint[0] + this->length[0] + 0.04 ) {
             return 1; // top
         }
         else {
@@ -311,8 +307,8 @@ int Rectangle::isColliding(Circle* c) {
     }
     else
     {
-        if( c->centerPos[0] > this->cornerPoint[0] &&
-           c->centerPos[0] < this->cornerPoint[0] + this->length[0] ) {
+        if( c->centerPos[0] + 0.04 > this->cornerPoint[0] &&
+           c->centerPos[0] < this->cornerPoint[0] + this->length[0] + 0.04 ) {
             return 3; // bottom
         }
         else {
@@ -350,7 +346,6 @@ bool Rectangle::collide(Circle* c) {
     }
     return true;
 }
-/********************* by Subin ************************/
 
 class Stick : public Rectangle {
 public:
@@ -372,7 +367,7 @@ bool Stick::collide(Circle* c) {
     if ( di == 1 ) {
 
         float collision_pos = (c->centerPos[0] - (cornerPoint[0]+STICK_WIDTH/2.0)) / (STICK_WIDTH);
-        float rad = M_PI/2 * (1-collision_pos);
+        float rad = PI/2 * (1-collision_pos);
         
         c->velocity[0] = abs(VEL) * cos(rad) / (FPS * 5);
         c->velocity[1] = abs(VEL) * sin(rad) / (FPS * 5);

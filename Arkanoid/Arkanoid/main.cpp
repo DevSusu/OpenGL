@@ -19,17 +19,18 @@
 
 using namespace std;
 
-vector<Circle*> cir;
-bool stop = false;
-bool game_running = true;
+// game settings
+int stage;
 int life;
-Stick* stick;
-int score = 0;
+int score;
 
-/********************* by Jeongwon ************************/
+bool stop = false;
+bool pause = false;
+
 vector<Rectangle*> rect;
+vector<Circle*> cir;
 Boundary* boundary;
-/********************* by Jeongwon ************************/
+Stick* stick;
 
 void* glutFonts[7] = {
     GLUT_BITMAP_9_BY_15,
@@ -57,34 +58,44 @@ void glutPrint(float x, float y, void* font, char* text, float r, float g, float
     if(!blending) glDisable(GL_BLEND);
 }
 
-void initShape() {
-
+void gameReset() {
     life = 3;
-    int num = 1;
+    stage = 1;
+    score = 0;
     
+    pause = false;
+    stop = false;
+}
+
+void initBall() {
+    int num = 1;
+    VEL = STAGE_VEL[stage];
     for (int i = 0; i<num; i++) {
         Circle* shape = new Circle();
-        shape->setPosition(0, 0);
+        shape->setPosition((BORDER_RIGHT+BORDER_LEFT)/2.0, 0);
         cir.push_back(shape);
     }
-    
+}
+
+void initShape() {
+
+    initBall();
     boundary = new Boundary();
     
-    /********************* by Jeongwon ************************/
     stick = new Stick();
-    stick->setPosition(-0.2, -0.95);
+    stick->setPosition((BORDER_RIGHT+BORDER_LEFT-STICK_WIDTH)/2.0, -0.95);
     stick->setlength(STICK_WIDTH,STICK_HEIGHT);
     rect.push_back(stick);
     
     Rectangle* rect_1;
-    int brick_num = 24;
+    int brick_num = 12;
     for (int i = 0; i < brick_num; i++) {
         rect_1 = new Rectangle();
+        rect_1->setDurability(stage);
         rect_1->setPosition(BORDER_LEFT+0.005 + (i-(i/10)*10)*(BRICK_WIDTH+0.01), 0.95-0.05*(i/10));
         rect_1->setlength(BRICK_WIDTH, BRICK_HEIGHT);
         rect.push_back(rect_1);
     }
-    /********************* by Jeongwon ************************/
     
 }
 
@@ -108,16 +119,8 @@ void renderScene()
     // Clear Color and Depth Buffers
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
- 
-    if ( stop ) {
-        cleanUp();
-        initShape();
-        
-        stop = false;
-        return ;
-    }
     
-    if( game_running ) {
+    if( !pause ) {
         
         for (int i = 0; i < cir.size(); i++)
             cir[i]->draw();
@@ -126,10 +129,18 @@ void renderScene()
         boundary->draw();
         
         glutPrint(0.65, 0.90, glutFonts[3], strdup(("Score: " + std::to_string(score)).c_str()), 0.0, 0,0,1);
+        glutPrint(0.65, 0.60, glutFonts[3], strdup(("Stage: " + std::to_string(stage)).c_str()), 0.0, 0,0,1);
+        glutPrint(0.65, 0.30, glutFonts[3], strdup(("Life: " + std::to_string(life)).c_str()), 0.0, 0,0,1);
         glutSwapBuffers();
         
     } else {
         
+        if( stop ) {
+            glutPrint(-0.15, 0.6, glutFonts[3], strdup("Game Dead"), 0.0, 0,0,1);
+        } else {
+            glutPrint(-0.10 , 0.6, glutFonts[3], strdup("Paused"), 0.0, 0,0,1);
+            glutPrint(-0.1, -0.6 , glutFonts[3], strdup(("Life: " + std::to_string(life)).c_str()), 0.0, 0,0,1);
+        }
         glutPrint(-0.1, 0.3, glutFonts[3], strdup(("Score: " + std::to_string(score)).c_str()), 0.0, 0,0,1);
         glutPrint(-0.35, 0, glutFonts[3], strdup("Press Space Bar to restart"), 0.0, 0,0,1);
         glutPrint(-0.25, -0.3, glutFonts[3], strdup("Press ESC to quit"), 0.0, 0,0,1);
@@ -142,7 +153,7 @@ clock_t preTime;
 void idle() {
     clock_t current = clock();
     clock_t diff = current - preTime;
-    if (diff > 1000.0 / FPS && game_running) {
+    if (diff > 1000.0 / FPS && !pause) {
         for (int i = 0; i<cir.size(); i++) {
             cir[i]->move();
         }
@@ -167,7 +178,6 @@ void idle() {
                         rect.erase(rect.begin() + j);
                     
                     score++;
-                    cout << score << endl;
                 }
             }
             
@@ -176,17 +186,26 @@ void idle() {
                 cir.erase(cir.begin() + i);
             }
             
-            if ( cir.size() == 0 || rect.size() == 1 ) {
-                stop = true;
+            if ( cir.size() == 0 ) {
                 life--;
                 
-                if( life == 0 )
-                    game_running = false;
-                else
-                    game_running = true;
+                if( life == 0 ) {
+                    stop = true;
+                }
                 
-                break;
+                initBall();
+                pause = true;
             }
+            if ( rect.size() == 1 ) {
+                stage++;
+                if( stage == 4 ) {
+                    stop = true;
+                }
+                cleanUp();
+                initShape();
+                pause = true;
+            }
+            
             preTime = current;
         }
     }
@@ -211,11 +230,19 @@ void SpecialKey(int key, int x, int y)
             break;
             
         case 32: // SPACEBAR
-            game_running = !game_running;
+            if( stop ) {
+                stop = !stop;
+                cleanUp();
+                gameReset();
+                initShape();
+            }
+            else {
+                pause = !pause;
+            }
             break;
             
         case 27: // ESC
-            if( !game_running )
+            if( !pause )
                 exit(0);
             break;
             
@@ -238,6 +265,7 @@ void passive(int x, int y){
 int main(int argc, char **argv)
 {
     srand(time(NULL));
+    gameReset();
     initShape();
     
     glutInit(&argc, argv);
@@ -250,6 +278,7 @@ int main(int argc, char **argv)
     glutDisplayFunc(renderScene);
     preTime = clock();
     glutIdleFunc(idle);
+    // stick movement by mouse
     glutPassiveMotionFunc(&passive);
     glutSpecialFunc(SpecialKey);
     glutMainLoop();
@@ -257,10 +286,8 @@ int main(int argc, char **argv)
     for (int i = 0; i < cir.size(); i++) {
         delete cir[i];
     }
-    /********************* by Jeongwon ************************/
     for (int i = 0; i < rect.size(); i++) {
         delete rect[i];
     }
     delete boundary;
-    /********************* by Jeongwon ************************/
 }
